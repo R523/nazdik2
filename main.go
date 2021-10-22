@@ -13,7 +13,10 @@ import (
 	"periph.io/x/host/v3/rpi"
 )
 
-const Interval = 1 * time.Second
+const (
+	Interval  = 1 * time.Second
+	Threshold = 10
+)
 
 func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, error) {
 	var e1, e2 gpio.Edge
@@ -97,6 +100,16 @@ func main() {
 		distance := duration.Microseconds() / 29 / 2
 
 		pterm.Info.Printf("there is an object in %d cm\n", distance)
+
+		if distance < Threshold {
+			if err := rpi.P1_37.Out(gpio.High); err != nil {
+				pterm.Error.Printf("led turnning on failed %s\n", err)
+			}
+		} else {
+			if err := rpi.P1_37.Out(gpio.Low); err != nil {
+				pterm.Error.Printf("led turnning off failed %s\n", err)
+			}
+		}
 
 		select {
 		case <-t.C:
