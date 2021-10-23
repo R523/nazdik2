@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	Interval  = 1 * time.Second
-	Threshold = 10
+	Interval        = 1 * time.Second
+	PulseInTimesout = 10 * time.Second
+	Threshold       = 10
 )
 
 func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, error) {
@@ -89,7 +90,7 @@ func main() {
 		// nolint: gomnd
 		time.Sleep(10 * time.Microsecond)
 
-		duration, err := PulseIn(ep, gpio.High, -1)
+		duration, err := PulseIn(ep, gpio.High, PulseInTimesout)
 		if err != nil {
 			pterm.Error.Printf("failed to pulse in %s", err)
 
