@@ -16,8 +16,25 @@ import (
 const (
 	Interval        = 1 * time.Second
 	PulseInTimesout = 10 * time.Second
-	Threshold       = 10
+
+	// Thresholds in cm
+	Threshold0 = 10
+	Threshold1 = 20
+	Threshold2 = 30
+	Threshold3 = 40
 )
+
+func SetLEDs(lvls [4]gpio.Level) error {
+	leds := [4]gpio.PinOut{rpi.P1_29, rpi.P1_31, rpi.P1_33, rpi.P1_32}
+
+	for i := 0; i < 4; i++ {
+		if err := leds[i].Out(lvls[i]); err != nil {
+			return fmt.Errorf("failed to set output on pin %s %w", leds[i], err)
+		}
+	}
+
+	return nil
+}
 
 func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, error) {
 	var e1, e2 gpio.Edge
@@ -62,6 +79,12 @@ func main() {
 		return
 	}
 
+	if err := SetLEDs([4]gpio.Level{gpio.Low, gpio.Low, gpio.Low, gpio.Low}); err != nil {
+		pterm.Error.Printf("set leds failed %s\n", err)
+
+		return
+	}
+
 	t := time.NewTicker(Interval)
 	defer t.Stop()
 
@@ -102,13 +125,36 @@ func main() {
 
 		pterm.Info.Printf("there is an object in %d cm\n", distance)
 
-		if distance < Threshold {
-			if err := rpi.P1_37.Out(gpio.High); err != nil {
-				pterm.Error.Printf("led turnning on failed %s\n", err)
+		switch {
+		case distance <= Threshold0:
+			if err := SetLEDs([4]gpio.Level{gpio.High, gpio.Low, gpio.Low, gpio.Low}); err != nil {
+				pterm.Error.Printf("set leds failed %s\n", err)
+
+				return
 			}
-		} else {
-			if err := rpi.P1_37.Out(gpio.Low); err != nil {
-				pterm.Error.Printf("led turnning off failed %s\n", err)
+		case distance > Threshold0 && distance <= Threshold1:
+			if err := SetLEDs([4]gpio.Level{gpio.Low, gpio.High, gpio.Low, gpio.Low}); err != nil {
+				pterm.Error.Printf("set leds failed %s\n", err)
+
+				return
+			}
+		case distance > Threshold1 && distance <= Threshold2:
+			if err := SetLEDs([4]gpio.Level{gpio.Low, gpio.Low, gpio.High, gpio.Low}); err != nil {
+				pterm.Error.Printf("set leds failed %s\n", err)
+
+				return
+			}
+		case distance > Threshold2 && distance <= Threshold3:
+			if err := SetLEDs([4]gpio.Level{gpio.Low, gpio.Low, gpio.Low, gpio.High}); err != nil {
+				pterm.Error.Printf("set leds failed %s\n", err)
+
+				return
+			}
+		case distance > Threshold3:
+			if err := SetLEDs([4]gpio.Level{gpio.Low, gpio.Low, gpio.Low, gpio.Low}); err != nil {
+				pterm.Error.Printf("set leds failed %s\n", err)
+
+				return
 			}
 		}
 
