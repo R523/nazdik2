@@ -17,13 +17,14 @@ const (
 	Interval        = 1 * time.Second
 	PulseInTimesout = 10 * time.Second
 
-	// Thresholds in cm
+	// Thresholds in centimeter.
 	Threshold0 = 10
 	Threshold1 = 20
 	Threshold2 = 30
 	Threshold3 = 40
 )
 
+// SetLEDs defines the state of four leds which shows the distance from ultrasonic sensor.
 func SetLEDs(lvls [4]gpio.Level) error {
 	leds := [4]gpio.PinOut{rpi.P1_29, rpi.P1_31, rpi.P1_33, rpi.P1_32}
 
@@ -36,6 +37,7 @@ func SetLEDs(lvls [4]gpio.Level) error {
 	return nil
 }
 
+// PulseIn measures the duration of specified level on the given pin.
 func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, error) {
 	var e1, e2 gpio.Edge
 
