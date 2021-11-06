@@ -43,6 +43,11 @@ func main() {
 	}
 	d.Register(app.Group("/api"))
 
+	// nolint: exhaustivestruct
+	app.Static("/", "../../web/nazdik/out", fiber.Static{
+		Index: "index.html",
+	})
+
 	go func() {
 		if err := app.Listen(":1378"); err != nil {
 			pterm.Error.Printf("listen on port 1378 failed %s\n", err)
@@ -80,6 +85,8 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
+
+	pterm.Info.Printf("Bye!\n")
 
 	if err := app.Shutdown(); err != nil {
 		pterm.Error.Printf("http server shutdown failed %s\n", err)
