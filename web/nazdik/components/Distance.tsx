@@ -6,14 +6,14 @@ export default function Distance() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      fetch("/app")
+      fetch("/api/distance")
         .then((resp) => {
           if (resp.ok) {
             return resp.json();
           }
           throw new Error(`request failed with ${resp.statusText}`);
         })
-        .then((data) => setDistance(distance - 1))
+        .then((data) => setDistance(data))
         .catch((err) => console.log(err));
     }, 1000);
 
