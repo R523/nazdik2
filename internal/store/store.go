@@ -9,7 +9,7 @@ type Distance struct {
 
 func (d *Distance) Get() int64 {
 	d.lock.RLock()
-	defer d.lock.Unlock()
+	defer d.lock.RUnlock()
 
 	return d.value
 }
