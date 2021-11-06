@@ -6,6 +6,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pterm/pterm"
 	"github.com/r523/nazdik/internal/ultrasonic"
 	"periph.io/x/host/v3"
@@ -30,6 +31,14 @@ func main() {
 
 		return
 	}
+
+	app := fiber.New()
+
+	go func() {
+		if err := app.Listen(":1378"); err != nil {
+			pterm.Error.Printf("listen on port 1378 failed %s\n", err)
+		}
+	}()
 
 	stop := make(chan struct{})
 
@@ -60,6 +69,10 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
+
+	if err := app.Shutdown(); err != nil {
+		pterm.Error.Printf("http server shutdown failed %s\n", err)
+	}
 
 	close(stop)
 }
