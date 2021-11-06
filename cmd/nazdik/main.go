@@ -8,6 +8,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pterm/pterm"
+	"github.com/r523/nazdik/internal/handler"
+	"github.com/r523/nazdik/internal/store"
 	"github.com/r523/nazdik/internal/ultrasonic"
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/rpi"
@@ -32,7 +34,14 @@ func main() {
 		return
 	}
 
+	var st store.Distance
+
 	app := fiber.New()
+
+	d := handler.Distance{
+		Store: &st,
+	}
+	d.Register(app.Group("/api"))
 
 	go func() {
 		if err := app.Listen(":1378"); err != nil {
@@ -56,6 +65,8 @@ func main() {
 			}
 
 			pterm.Info.Printf("there is an object in %d cm\n", distance)
+
+			st.Set(distance)
 
 			select {
 			case <-t.C:
