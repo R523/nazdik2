@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pterm/pterm"
+	"github.com/r523/nazdik/internal/store"
 	"periph.io/x/conn/v3/gpio"
 )
 
-const PulseInTimeout = 10 * time.Second
+const (
+	PulseInTimeout = 10 * time.Second
+	Interval       = 1 * time.Second
+)
 
 // PulseIn measures the duration of specified level on the given pin.
 func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, error) {
@@ -38,22 +43,34 @@ func PulseIn(pin gpio.PinIn, lvl gpio.Level, t time.Duration) (time.Duration, er
 	return time.Since(now), nil
 }
 
-func Read(tp, ep gpio.PinIO) (int64, error) {
-	if err := tp.Out(gpio.Low); err != nil {
-		return 0, fmt.Errorf("pinout %s %w", tp, err)
+type Ultrasonic struct {
+	TriggerPin gpio.PinOut
+	EchoPin    gpio.PinIn
+}
+
+func New(tp gpio.PinOut, ep gpio.PinIn) Ultrasonic {
+	return Ultrasonic{
+		TriggerPin: tp,
+		EchoPin:    ep,
+	}
+}
+
+func (u Ultrasonic) Read() (int64, error) {
+	if err := u.TriggerPin.Out(gpio.Low); err != nil {
+		return 0, fmt.Errorf("pinout %s %w", u.TriggerPin, err)
 	}
 
 	// nolint: gomnd
 	time.Sleep(2 * time.Microsecond)
 
-	if err := tp.Out(gpio.High); err != nil {
-		return 0, fmt.Errorf("pinout %s %w", tp, err)
+	if err := u.TriggerPin.Out(gpio.High); err != nil {
+		return 0, fmt.Errorf("pinout %s %w", u.TriggerPin, err)
 	}
 
 	// nolint: gomnd
 	time.Sleep(10 * time.Microsecond)
 
-	duration, err := PulseIn(ep, gpio.High, PulseInTimeout)
+	duration, err := PulseIn(u.EchoPin, gpio.High, PulseInTimeout)
 	if err != nil {
 		return 0, fmt.Errorf("failed to pulse in %w", err)
 	}
@@ -62,4 +79,28 @@ func Read(tp, ep gpio.PinIO) (int64, error) {
 	distance := duration.Microseconds() / 29 / 2
 
 	return distance, nil
+}
+
+func (u Ultrasonic) Run(st *store.Distance, stop <-chan struct{}) {
+	go func() {
+		t := time.NewTicker(Interval)
+		defer t.Stop()
+
+		for {
+			distance, err := u.Read()
+			if err != nil {
+				pterm.Error.Printf("cannot read from ultrasonic %s\n", err)
+			}
+
+			pterm.Info.Printf("there is an object in %d cm\n", distance)
+
+			st.Set(distance)
+
+			select {
+			case <-t.C:
+			case <-stop:
+				return
+			}
+		}
+	}()
 }
