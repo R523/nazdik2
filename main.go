@@ -1,23 +1,22 @@
 package main
 
 import (
+	"embed"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pterm/pterm"
-	"github.com/r523/nazdik/internal/handler"
+	"github.com/r523/nazdik/internal/http/handler"
 	"github.com/r523/nazdik/internal/store"
 	"github.com/r523/nazdik/internal/ultrasonic"
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/rpi"
 )
 
-const (
-	Interval = 1 * time.Second
-)
+//go:embed web/nazdik/out
+var content embed.FS
 
 func main() {
 	if err := pterm.DefaultBigText.WithLetters(
@@ -34,19 +33,16 @@ func main() {
 		return
 	}
 
-	var st store.Distance
+	st := new(store.Distance)
 
 	app := fiber.New()
 
 	d := handler.Distance{
-		Store: &st,
+		Store: st,
 	}
 	d.Register(app.Group("/api"))
 
-	// nolint: exhaustivestruct
-	app.Static("/", "../../web/nazdik/out", fiber.Static{
-		Index: "index.html",
-	})
+	handler.Static(app, content)
 
 	go func() {
 		if err := app.Listen(":1378"); err != nil {
@@ -56,30 +52,9 @@ func main() {
 
 	stop := make(chan struct{})
 
-	go func() {
-		t := time.NewTicker(Interval)
-		defer t.Stop()
-
-		for {
-			tp := rpi.P1_13
-			ep := rpi.P1_11
-
-			distance, err := ultrasonic.Read(tp, ep)
-			if err != nil {
-				pterm.Error.Printf("cannot read from ultrasonic %s\n", err)
-			}
-
-			pterm.Info.Printf("there is an object in %d cm\n", distance)
-
-			st.Set(distance)
-
-			select {
-			case <-t.C:
-			case <-stop:
-				return
-			}
-		}
-	}()
+	tp := rpi.P1_13
+	ep := rpi.P1_11
+	ultrasonic.New(tp, ep).Run(st, stop)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
