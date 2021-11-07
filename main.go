@@ -1,12 +1,12 @@
 package main
 
 import (
-	"embed"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pterm/pterm"
 	"github.com/r523/nazdik/internal/http/handler"
 	"github.com/r523/nazdik/internal/store"
@@ -14,9 +14,6 @@ import (
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/rpi"
 )
-
-//go:embed web/nazdik/out
-var content embed.FS
 
 func main() {
 	if err := pterm.DefaultBigText.WithLetters(
@@ -37,12 +34,14 @@ func main() {
 
 	app := fiber.New()
 
+	handler.Static(app)
+
 	d := handler.Distance{
 		Store: st,
 	}
 	d.Register(app.Group("/api"))
 
-	handler.Static(app, content)
+	app.Use(logger.New())
 
 	go func() {
 		if err := app.Listen(":1378"); err != nil {
@@ -63,9 +62,9 @@ func main() {
 
 	pterm.Info.Printf("Bye!\n")
 
+	close(stop)
+
 	if err := app.Shutdown(); err != nil {
 		pterm.Error.Printf("http server shutdown failed %s\n", err)
 	}
-
-	close(stop)
 }
