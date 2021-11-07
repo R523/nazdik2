@@ -83,21 +83,17 @@ func (u Ultrasonic) Read() (int64, error) {
 
 func (u Ultrasonic) Run(st *store.Distance, stop <-chan struct{}) {
 	go func() {
-		t := time.NewTicker(Interval)
-		defer t.Stop()
-
 		for {
-			distance, err := u.Read()
-			if err != nil {
-				pterm.Error.Printf("cannot read from ultrasonic %s\n", err)
-			}
-
-			pterm.Info.Printf("there is an object in %d cm\n", distance)
-
-			st.Set(distance)
-
 			select {
-			case <-t.C:
+			case <-time.After(Interval):
+				distance, err := u.Read()
+				if err != nil {
+					pterm.Error.Printf("cannot read from ultrasonic %s\n", err)
+				}
+
+				pterm.Info.Printf("there is an object in %d cm\n", distance)
+
+				st.Set(distance)
 			case <-stop:
 				return
 			}
