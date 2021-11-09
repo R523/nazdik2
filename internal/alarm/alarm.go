@@ -22,7 +22,7 @@ func (a *Alarm) Run() {
 				_ = err
 			}
 		} else {
-			if err := rpi.P1_37.Out(gpio.High); err != nil {
+			if err := rpi.P1_37.Out(gpio.Low); err != nil {
 				_ = err
 			}
 		}
