@@ -8,12 +8,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pterm/pterm"
+	"github.com/r523/nazdik/internal/alarm"
 	"github.com/r523/nazdik/internal/http/handler"
 	"github.com/r523/nazdik/internal/store"
 	"github.com/r523/nazdik/internal/ultrasonic"
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/rpi"
 )
+
+const AlertThreshold = 10
 
 func main() {
 	if err := pterm.DefaultBigText.WithLetters(
@@ -54,6 +57,8 @@ func main() {
 	tp := rpi.P1_13
 	ep := rpi.P1_11
 	ultrasonic.New(tp, ep).Run(st, stop)
+
+	alarm.New(st, AlertThreshold).Run()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
