@@ -28,15 +28,15 @@ func New(st *store.Distance, t int64) *Alarm {
 }
 
 func (a *Alarm) Run() {
+	p, err := pcf8574.New("/dev/i2c-1")
+	if err != nil {
+		_ = err
+
+		return
+	}
+
 	for {
 		if a.Store.Get() < a.Threshold {
-			p, err := pcf8574.New("/dev/i2c-1")
-			if err != nil {
-				_ = err
-
-				continue
-			}
-
 			if err := p.Write(onCommand); err != nil {
 				_ = err
 

@@ -58,7 +58,7 @@ func main() {
 	ep := rpi.P1_11
 	ultrasonic.New(tp, ep).Run(st, stop)
 
-	alarm.New(st, AlertThreshold).Run()
+	go alarm.New(st, AlertThreshold).Run()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
