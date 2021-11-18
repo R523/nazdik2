@@ -68,8 +68,4 @@ func main() {
 	pterm.Info.Printf("Bye!\n")
 
 	close(stop)
-
-	if err := app.Shutdown(); err != nil {
-		pterm.Error.Printf("http server shutdown failed %s\n", err)
-	}
 }
