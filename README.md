@@ -1,4 +1,4 @@
-# nazdik -- second generation
+# nazdik - second generation
 
 ## Introduction
 
